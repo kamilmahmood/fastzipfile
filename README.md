@@ -19,6 +19,6 @@ with FastZipFile('path-to-file.zip', mode='r') as fz:
 Currently it only supports what zipfile.ZipFile supports e.g. no AES-128 or AES-256 support.
 
 # License
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
 
