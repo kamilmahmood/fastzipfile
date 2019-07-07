@@ -1,5 +1,5 @@
 # fastzipfile
-Read Standard Encryption 2.0 encrypted Zips 100x faster with same interface as standard library's zipfile.Zipfile
+Read Standard Encryption 2.0 encrypted Zips 100x faster with same interface as standard library's `zipfile.ZipFile`
 
 # Installation
 ```
