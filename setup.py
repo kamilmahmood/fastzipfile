@@ -20,7 +20,7 @@ setup(
       author='Kamil Mahmood',
       author_email='kamil.mahmood@outlook.com',
       classifiers=[
-        'Development Status :: Beta',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Decryption :: Zip Decryption',
         'License :: MIT License',
