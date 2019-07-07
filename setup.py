@@ -12,7 +12,7 @@ decrypter = Extension('_zipdecrypter', ['extension/_zipdecryptermodule.c'])
 
 setup(
       name='fastzipfile',
-      version='v1.0.0b',
+      version='v1.0',
       description='Read password protected Zips 100x faster',
       long_description=long_description,
       long_description_content_type='text/markdown',
