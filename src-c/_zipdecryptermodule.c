@@ -125,10 +125,9 @@ PyInit__zipdecrypter() {
     if (m == NULL) {
         return NULL;
     }
-    Py_INCREF(&zipdecryptermodule);
 
     if (PyModule_AddObject(m, "StandardZipDecrypter", (PyObject *) &StandardZipDecrypterType) != 0) {
-        Py_DECREF(&zipdecryptermodule);
+        Py_DECREF(m);
         return NULL;
     }
 
