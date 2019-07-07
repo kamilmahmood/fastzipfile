@@ -8,7 +8,7 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
-decrypter = Extension('_zipdecrypter', ['src-c/_zipdecryptermodule.c'])
+decrypter = Extension('_zipdecrypter', ['extension/_zipdecryptermodule.c'])
 
 setup(
       name='fastzipfile',
