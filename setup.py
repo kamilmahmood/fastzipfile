@@ -12,7 +12,7 @@ decrypter = Extension('_zipdecrypter', ['extension/_zipdecryptermodule.c'])
 
 setup(
       name='fastzipfile',
-      version='v1.0',
+      version='v1.0.0',
       description='Read password protected Zips 100x faster',
       long_description=long_description,
       long_description_content_type='text/markdown',
@@ -31,7 +31,7 @@ setup(
         'Programming Language :: Python :: 3.7',
     ],
     keywords='zip zipfile fastzip',
-    python_requires='>=3.0, <4',
+    python_requires='>=3.5, <3.8',
     py_modules=['fastzipfile'],
     ext_modules=[decrypter]
 )

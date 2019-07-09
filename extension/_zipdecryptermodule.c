@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdint.h>
+#include <stdio.h>
 
 
 // Must be intialized on module init
@@ -43,6 +44,38 @@ UpdateKeys(StandardZipDecrypterObject *decrypter, uint8_t c) {
     decrypter->key2 = CRC32((decrypter->key1 >> 24) & 255, decrypter->key2);
 }
 
+static uint8_t
+DecryptByte(StandardZipDecrypterObject *decrypter, uint8_t c) {
+    uint32_t k = decrypter->key2 | 2;
+    c = c ^ (((k * (k^1)) >> 8) & 255);
+    UpdateKeys(decrypter, c);
+    return c;
+}
+
+static PyBytesObject *
+DecryptBytes(StandardZipDecrypterObject *decrypter, const PyBytesObject *input) {
+    Py_ssize_t len = PyBytes_GET_SIZE(input);
+    // Return from here because malloc(0) is undefined
+    if (len == 0) {
+        return PyBytes_FromStringAndSize("", 0);
+    }
+    
+    const uint8_t* buffer = PyBytes_AS_STRING(input);
+
+    uint8_t *output = malloc(len * sizeof(uint8_t));
+    if (output == NULL) {
+        return PyErr_NoMemory();
+    }
+    
+    for (uint32_t i = 0; i < len; ++i) {
+        output[i] = DecryptByte(decrypter, buffer[i]);
+    }
+    PyBytesObject *ret = PyBytes_FromStringAndSize(output, len);
+    // Free allocated memory because it has been already copied to bytes object
+    free(output);
+    return ret;
+}
+
 static int
 StandardZipDecrypter_init(StandardZipDecrypterObject *self, PyObject *args, PyObject *kwds) {
     const uint8_t *pwd = NULL;
@@ -63,38 +96,58 @@ StandardZipDecrypter_init(StandardZipDecrypterObject *self, PyObject *args, PyOb
 }
 
 static PyObject *
-StandardZipDecrypter_call(StandardZipDecrypterObject *self, PyObject *args, PyObject *kwds) {
-    const PyBytesObject* input;
+StandardZipDecrypter_decrypt_bytes(StandardZipDecrypterObject *self, PyObject *args) {
+    const PyObject* input;
 
     if (!PyArg_ParseTuple(args, "S", &input)) {
         return NULL;
     }
-    
-    Py_ssize_t len = PyBytes_GET_SIZE(input);
-    // Return from here because malloc(0) is undefined
-    if (len == 0) {
-        return PyBytes_FromStringAndSize("", 0);
-    }
-    
-    const uint8_t* buffer = PyBytes_AS_STRING(input);
 
-    uint8_t *output = malloc(len * sizeof(uint8_t));
-    if (output == NULL) {
-        return PyErr_NoMemory();
-    }
-    
-    for (uint32_t i = 0; i < len; ++i) {
-        uint8_t c = buffer[i];
-        uint32_t k = self->key2 | 2;
-        c = c ^ (((k * (k^1)) >> 8) & 255);
-        UpdateKeys(self, c);
-        output[i] = c;
-    }
-    PyBytesObject *ret = PyBytes_FromStringAndSize(output, len);
-    // Free allocated memory because it has been already copied to bytes object
-    free(output);
-    return ret;
+    return DecryptBytes(self, input);
 }
+
+static PyObject *
+StandardZipDecrypter_call(StandardZipDecrypterObject *self, PyObject *args, PyObject *kwds) {
+    const PyObject* input;
+
+    if (!PyArg_ParseTuple(args, "O", &input)) {
+        return NULL;
+    }
+
+    if (PyLong_CheckExact(input)) {
+        uint32_t c = PyLong_AsUnsignedLong(input);
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        if (c > 255) {
+            PyErr_SetString(PyExc_ValueError, "valid range of byte is [0-255]");
+            return NULL;
+        }
+        return PyLong_FromLong(DecryptByte(self, (uint8_t) c));
+    }
+
+    if (PyBytes_CheckExact(input)) {
+        return DecryptBytes(self, PyBytes_FromObject(input));
+    }
+
+    ssize_t msg_len = 256;
+    char *msg = (char *) malloc(msg_len);
+    snprintf(msg, msg_len, "a bytes object or int is required, not '%s'", input->ob_type->tp_name);
+    PyErr_SetString(PyExc_TypeError, msg);
+    free(msg);
+    
+    return NULL;
+}
+
+static PyMethodDef StandardZipDecrypter_methods[] = {
+    {
+        .ml_name = "decrypt_bytes", 
+        .ml_meth = (PyCFunction) StandardZipDecrypter_decrypt_bytes, 
+        .ml_flags = METH_VARARGS,
+        .ml_doc = "Decrypt and return bytes object"
+    },
+    {NULL}  /* Sentinel */
+};
 
 static PyTypeObject StandardZipDecrypterType = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -105,7 +158,8 @@ static PyTypeObject StandardZipDecrypterType = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_new = PyType_GenericNew,
     .tp_init = (initproc) StandardZipDecrypter_init,
-    .tp_call = (ternaryfunc) StandardZipDecrypter_call
+    .tp_call = (ternaryfunc) StandardZipDecrypter_call,
+    .tp_methods = StandardZipDecrypter_methods,
 };
 
 static PyModuleDef zipdecryptermodule = {

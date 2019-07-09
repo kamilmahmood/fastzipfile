@@ -1,16 +1,18 @@
 # fastzipfile
-Read Standard Encryption 2.0 encrypted Zips 100x faster with same interface as standard library's `zipfile.ZipFile`
+Read Standard Zip Encryption 2.0 encrypted Zips 100x faster with same interface as standard library's `zipfile.ZipFile`
 
 # Installation
 ```
 pip install fastzipfile
 ```
 # Usage
-```python
-from fastzipfile import FastZipFile
+You just need to import `fastzipfile` and thats it. It monkey patches `zipfile` with fast decrypter.
 
-# There is no change in interface from zipfile.Zipfile
-with FastZipFile('path-to-file.zip', mode='r') as fz:
+```python
+import fastzipfile
+import zipfile
+
+with zipfile.ZipFile('path-to-file.zip', mode='r') as fz:
     f = fz.open('path-to-file-in-zip', pwd=b'password')
     content = f.read()
 ```
@@ -20,5 +22,3 @@ Currently it only supports what zipfile.ZipFile supports e.g. no AES-128 or AES-
 
 # License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
-
-
